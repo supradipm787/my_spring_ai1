@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simpsons Trivia — Spring AI Demo</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="logo">🍩 Simpsons Trivia</div>
+        <div class="sub">A tiny Spring Boot + Spring AI demo</div>
+      </header>
+
+      <main>
+        <section class="left">
+          <div class="card">
+            <label for="prompt">Ask a Simpsons trivia question</label>
+            <textarea id="prompt" placeholder="e.g. What is Bart's middle name?" rows="3"></textarea>
+            <div class="controls">
+              <button id="askBtn" class="btn primary">Ask</button>
+              <button id="celebrateBtn" class="btn">Celebrate 🎉</button>
+              <span id="status" class="status"></span>
+            </div>
+          </div>
+
+          <div class="card response">
+            <h3>Answer</h3>
+            <div id="answerArea" class="answer">No answer yet — ask a question!</div>
+          </div>
+        </section>
+
+        <aside class="right">
+          <div class="card history">
+            <h3>Past Questions</h3>
+            <ul id="historyList" class="history-list"></ul>
+            <div id="emptyHint" class="empty">Your past questions will appear here.</div>
+          </div>
+        </aside>
+      </main>
+
+      <footer>
+        <div>Made with ❤️ for Spring Boot + Spring AI — stay safe, and eat donuts 🍩</div>
+      </footer>
+    </div>
+
+    <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+    <script src="/script.js"></script>
+  </body>
+</html>
