@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: springAI_java_1
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+logging:
+ level:
+  org.springframework.web.client: DEBUG

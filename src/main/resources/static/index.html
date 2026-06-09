@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tweet Rewriter — Spring AI</title>
+    <link rel="stylesheet" href="/tweet-style.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <div class="brand">
+          <div class="logo">🌸 Tweet Blossom</div>
+          <div class="tag">A pretty (and slightly dramatic) Tweet Rewriter — powered by Spring AI</div>
+        </div>
+      </header>
+
+      <main class="main">
+        <section class="left">
+          <div class="card input-card">
+            <label for="tweetIn">Original tweet</label>
+            <textarea id="tweetIn" placeholder="Paste a tweet to rewrite..." rows="4"></textarea>
+
+            <div class="controls">
+              <div class="control">
+                <label>Emoji Level</label>
+                <select id="emojiLevel">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+
+              <div class="control">
+                <label>Modernization</label>
+                <select id="modernLevel">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="extreme">Extreme</option>
+                </select>
+              </div>
+
+              <div class="control">
+                <label>Topic hint</label>
+                <input id="topicHint" value="Spring AI" />
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="rewriteBtn" class="btn primary">Rewrite Tweets</button>
+              <button id="celebrateBtn" class="btn">Fireworks 🎆</button>
+              <div id="spinner" class="spinner hidden" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div class="card output-card">
+            <h3>Variants</h3>
+            <div id="variantsArea" class="variants">No variants yet — rewrite a tweet to get started.</div>
+          </div>
+        </section>
+
+        <aside class="right">
+          <div class="card history-card">
+            <h3>Your Submissions</h3>
+            <ul id="historyList" class="history-list"></ul>
+            <div id="emptyHint" class="empty">No submissions yet — your history will appear here.</div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="footer">Made with florals and Spring Boot ❤️</footer>
+    </div>
+
+    <canvas id="confetti" class="confetti-canvas"></canvas>
+    <script src="/tweet-script.js"></script>
+  </body>
+</html>
