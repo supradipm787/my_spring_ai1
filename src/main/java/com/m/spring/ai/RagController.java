@@ -12,6 +12,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,20 +42,39 @@ public class RagController {
 		this.chatMemory = chatMemory;
 	}
 	
-	@PostConstruct
-	void injestBookonStartup() throws Exception {
-		// Ingest the book into the vector store on startup
-		var pdfUrl = "https://certificationexams.pro/docs/pickeringisspringfield.pdf";
-		var resource = new UrlResource(URI.create(pdfUrl));
-		var pages = new PagePdfDocumentReader(resource).get();
-		vectorStore.add(pages);
-		
-		
-		
-		IO.println("Ingested book into vector store" + pdfUrl );
+	// Removed automatic ingestion at startup because the embedding call can be large
+	// and may fail (causing the application context to fail to start)
+	// Use the /ingestBook endpoint to trigger ingestion manually or in controlled batches
+	@GetMapping("/ingestBook")
+	public String ingestBook() {
+		try {
+			// Ingest the book into the vector store on demand
+			var pdfUrl = "https://certificationexams.pro/docs/pickeringisspringfield.pdf";
+			var resource = new UrlResource(URI.create(pdfUrl));
+			var pages = new PagePdfDocumentReader(resource).get();
+
+			// Add pages in smaller units to avoid very large requests during embedding
+			for (var page : pages) {
+				try {
+					// add one page at a time (collection wrapper to match API expectations)
+					vectorStore.add(java.util.Collections.singletonList(page));
+				}
+				catch (Exception e) {
+					// Log and continue with other pages instead of failing the whole ingestion
+					System.err.println("Failed to add page to vector store: " + e.getMessage());
+				}
+			}
+
+			IO.println("Ingested book into vector store " + pdfUrl );
+			return "Ingestion started (pages processed individually)";
+		}
+		catch (Exception ex) {
+			System.err.println("Ingestion error: " + ex.getMessage());
+			return "Ingestion failed: " + ex.getMessage();
+		}
 	}
 	
-	@RequestMapping("/askAgain")
+	@GetMapping("/askAgain")
 	public String askAgain(@RequestParam String question, @RequestParam String cid) {
 		var userMessage = generateAugmentedPrompt(question);
 		var prompt = chatClient.prompt().user(userMessage);

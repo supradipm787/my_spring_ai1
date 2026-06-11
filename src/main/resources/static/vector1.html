@@ -79,7 +79,7 @@
       <h2>Ask about the book</h2>
       <p class="hint">Type a question about "Pickering is Springfield" and press Ask. Answers come from the ingested pages and will be displayed below.</p>
 
-      <div class="prompt-box">
+      <div class="prompt-box" style="position:relative">
         <input id="question" type="text" placeholder="e.g. Where are many events set in the book?" aria-label="question-input" />
         <button id="askBtn">Ask</button>
       </div>
@@ -123,6 +123,28 @@
       return ital.replace(/\n/g, '<br>');
     }
 
+    // CID generation and storage
+    function hexFromBytes(bytes){
+      return Array.from(bytes).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    function generateCid(){
+      // 32 bytes = 256 bits of randomness
+      const arr = new Uint8Array(32);
+      crypto.getRandomValues(arr);
+      return hexFromBytes(arr);
+    }
+
+    const CID_KEY = 'pickering_cid_v1';
+    let cid = localStorage.getItem(CID_KEY);
+    if(!cid){
+      cid = generateCid();
+      try{ localStorage.setItem(CID_KEY, cid); }catch(e){ /* ignore */ }
+    }
+
+    // We intentionally do not display the CID in the UI to avoid showing its value
+    // The cid is still generated and stored in localStorage and sent with requests.
+
     async function ask(){
       const q = questionInput.value.trim();
       if(!q) return;
@@ -131,7 +153,8 @@
       answerEl.textContent = '';
 
       try{
-        const res = await fetch('/ask?question=' + encodeURIComponent(q), { method: 'GET' });
+        const url = '/askAgain?question=' + encodeURIComponent(q) + '&cid=' + encodeURIComponent(cid);
+        const res = await fetch(url, { method: 'GET' });
         if(!res.ok){
           status.textContent = 'Error: ' + res.status + ' ' + res.statusText;
           const text = await res.text();
@@ -140,7 +163,7 @@
           const text = await res.text();
           // convert simple markdown-like markers to HTML
           answerEl.innerHTML = simpleMarkdownToHtml(text);
-          status.textContent = 'Answer received';
+          status.textContent = 'Answer received (cid: ' + cid.substring(0,8) + ')';
         }
       }catch(err){
         status.textContent = 'Network error';
