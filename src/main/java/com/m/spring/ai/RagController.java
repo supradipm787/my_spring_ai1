@@ -2,8 +2,13 @@ package com.m.spring.ai;
 
 import java.net.URI;
 import org.springframework.core.io.UrlResource;
+import java.util.Map;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,10 +25,20 @@ import org.springframework.ai.vectorstore.VectorStore;
 public class RagController {
 	ChatClient chatClient;
 	VectorStore vectorStore;
+	ChatMemory chatMemory;
 	
-	public RagController(ChatClient.Builder chatClientBuilder, EmbeddingModel embeddingModel) {
-		chatClient = chatClientBuilder.build();
+	public RagController(ChatClient.Builder chatClientBuilder, EmbeddingModel embeddingModel, ChatMemory chatMemory) {
+		
+		//MessageChatMemoryAdvisor keep track of the user messages
+		var memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+		
+		//chatClient = chatClientBuilder.build();
+		
+		chatClient = chatClientBuilder.defaultAdvisors(memoryAdvisor).build();
+		
+		
 		vectorStore =  SimpleVectorStore.builder(embeddingModel).build();
+		this.chatMemory = chatMemory;
 	}
 	
 	@PostConstruct
@@ -39,8 +54,38 @@ public class RagController {
 		IO.println("Ingested book into vector store" + pdfUrl );
 	}
 	
+	@RequestMapping("/askAgain")
+	public String askAgain(@RequestParam String question, @RequestParam String cid) {
+		var userMessage = generateAugmentedPrompt(question);
+		var prompt = chatClient.prompt().user(userMessage);
+		// advisor params expects a Map<String,Object>
+		var advisedPrompt = prompt.advisors(spec -> spec.params(Map.of(ChatMemory.CONVERSATION_ID, cid)));
+		
+		return advisedPrompt.call().content();
+	}
+	
 	@RequestMapping("/ask")
-	public String ask(@RequestParam String question) {
+	public String ask(@RequestParam String question, @RequestParam String cid) {
+		
+		chatMemory.add(cid, new UserMessage(question));
+		var history = chatMemory.get(cid);
+		
+		var prompt = generateAugmentedPrompt(question);
+		
+		
+		// attach the user prompt so the ChatClient will populate messages in the request
+		var fullPrompt = chatClient.prompt().user(prompt);
+		var generatedContent = fullPrompt.call().content();
+		
+		chatMemory.add(cid, new AssistantMessage(generatedContent));
+		
+		
+		
+		return generatedContent;
+		
+	}
+
+	private String generateAugmentedPrompt(String question) {
 		var retrievalQuery = SearchRequest.builder().query(question).topK(5).build();
 		var retrievedPages = vectorStore.similaritySearch(retrievalQuery);
 		int sizeRetrievedPages = retrievedPages.size();
@@ -69,16 +114,7 @@ public class RagController {
 
 		//Earlier Code
 		//var generatedContent = chatClient.prompt(prompt).call().content();
-		
-		
-		// attach the user prompt so the ChatClient will populate messages in the request
-		var fullPrompt = chatClient.prompt().user(prompt);
-		var generatedContent = fullPrompt.call().content();
-		
-		
-		
-		return generatedContent;
-		
+		return prompt;
 	} 
 
 }
