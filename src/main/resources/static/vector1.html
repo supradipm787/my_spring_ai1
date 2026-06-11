@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pickering in Springfield — Ask the Book</title>
+
+  <!-- Google fonts with a playful / comic feel -->
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --simpson-yellow: #FAD02E;
+      --simpson-blue: #154EA6;
+      --simpson-dark: #2b2b2b;
+      --card-bg: rgba(255,255,255,0.9);
+      --accent: #ff6f61;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(180deg, #fff7b2 0%, var(--simpson-yellow) 40%, #ffe58a 100%);
+      color:var(--simpson-dark);
+    }
+
+    header{
+      background: var(--simpson-blue);
+      color: white;
+      padding: 18px 22px;
+      display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    .logo{
+      width:56px;height:56px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--simpson-blue);font-family:'Luckiest Guy', cursive;font-size:20px;box-shadow:0 4px 8px rgba(0,0,0,0.15);
+    }
+    .title{
+      font-family:'Luckiest Guy', cursive;font-size:28px;line-height:1;color:#fff;margin:0;
+    }
+    .subtitle{font-size:12px;opacity:0.95;margin-left:6px}
+
+    main{padding:28px;display:flex;gap:24px;max-width:1100px;margin:24px auto;align-items:flex-start}
+
+    .panel{background:var(--card-bg);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+    .left{flex:1;min-width:320px}
+    .right{flex:1.1;min-width:360px}
+
+    .prompt-box{display:flex;gap:8px;align-items:flex-start}
+    input[type="text"]{flex:1;padding:12px;border-radius:8px;border:2px solid rgba(0,0,0,0.08);font-size:16px}
+    button{background:var(--simpson-blue);color:white;padding:10px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+    button:disabled{opacity:0.6;cursor:default}
+
+    .hint{font-size:13px;color:#444;margin-top:8px}
+    .response{white-space:pre-wrap;margin-top:12px;font-size:15px}
+
+    .sample{font-size:14px;color:#333}
+
+    footer{margin:24px auto;text-align:center;color:#333;opacity:0.9}
+
+    /* Markdown-like simple styling for bold/italic */
+    .response strong{font-weight:800}
+    .response em{font-style:italic;color:#333}
+
+    @media (max-width:900px){main{flex-direction:column;padding:12px}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">SI</div>
+    <div>
+      <h1 class="title">Pickering in Springfield</h1>
+      <div class="subtitle">Ask the book : friendly answers inspired by Simpsons style</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel left">
+      <h2>Ask about the book</h2>
+      <p class="hint">Type a question about "Pickering is Springfield" and press Ask. Answers come from the ingested pages and will be displayed below.</p>
+
+      <div class="prompt-box">
+        <input id="question" type="text" placeholder="e.g. Where are many events set in the book?" aria-label="question-input" />
+        <button id="askBtn">Ask</button>
+      </div>
+      <div class="hint">Tip: try queries like "Where is the narrator?" or "Which places does the book mention?"</div>
+
+      <h3 style="margin-top:18px">Sample output (from the model)</h3>
+      <div class="sample">
+        A lot of books' events (at least the pages provided) are set in <strong>Las Vegas</strong>, specifically <strong>in a nice hotel in Vegas</strong> where the narrator is talking about the woman who claims to be the contributor to <em>The Simpsons</em>.<br>
+        The book also references places like <strong>Mohali</strong>, <strong>UK</strong>, <strong>Australia</strong> & other travel locations in Bharat including India (same)
+		
+		I appreciate and respect all places, cultures & people around the world Free from prejudice I consider myself a global citizen who values diversity and inclusivity 
+      </div>
+    </section>
+
+    <section class="panel right">
+      <h2>Answer</h2>
+      <div id="status" style="font-size:13px;color:#666;margin-bottom:8px">No question yet</div>
+      <div id="answer" class="response">The answer will appear here.</div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Styled with Simpsons-inspired colors — background is sunny yellow, header in deep blue. This is a playful fan-inspired UI.</small>
+  </footer>
+
+  <script>
+    const askBtn = document.getElementById('askBtn');
+    const questionInput = document.getElementById('question');
+    const status = document.getElementById('status');
+    const answerEl = document.getElementById('answer');
+
+    function simpleMarkdownToHtml(text){
+      if(!text) return '';
+      // escape HTML
+      const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // bold **text**
+      const bolded = escaped.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      // italics *text*
+      const ital = bolded.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      // simple line breaks
+      return ital.replace(/\n/g, '<br>');
+    }
+
+    async function ask(){
+      const q = questionInput.value.trim();
+      if(!q) return;
+      askBtn.disabled = true;
+      status.textContent = 'Asking the book...';
+      answerEl.textContent = '';
+
+      try{
+        const res = await fetch('/ask?question=' + encodeURIComponent(q), { method: 'GET' });
+        if(!res.ok){
+          status.textContent = 'Error: ' + res.status + ' ' + res.statusText;
+          const text = await res.text();
+          answerEl.textContent = text;
+        } else {
+          const text = await res.text();
+          // convert simple markdown-like markers to HTML
+          answerEl.innerHTML = simpleMarkdownToHtml(text);
+          status.textContent = 'Answer received';
+        }
+      }catch(err){
+        status.textContent = 'Network error';
+        answerEl.textContent = String(err);
+      } finally{
+        askBtn.disabled = false;
+      }
+    }
+
+    askBtn.addEventListener('click', ask);
+    questionInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') ask(); });
+  </script>
+</body>
+</html>
